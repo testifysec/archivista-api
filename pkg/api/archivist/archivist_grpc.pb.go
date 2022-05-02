@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ArchivistClient interface {
-	GetBySubject(ctx context.Context, in *GetBySubjectRequest, opts ...grpc.CallOption) (*GetBySubjectResponse, error)
+	GetBySubjectDigest(ctx context.Context, in *GetBySubjectDigestRequest, opts ...grpc.CallOption) (*GetBySubjectDigestResponse, error)
 }
 
 type archivistClient struct {
@@ -30,9 +30,9 @@ func NewArchivistClient(cc grpc.ClientConnInterface) ArchivistClient {
 	return &archivistClient{cc}
 }
 
-func (c *archivistClient) GetBySubject(ctx context.Context, in *GetBySubjectRequest, opts ...grpc.CallOption) (*GetBySubjectResponse, error) {
-	out := new(GetBySubjectResponse)
-	err := c.cc.Invoke(ctx, "/archivist.Archivist/GetBySubject", in, out, opts...)
+func (c *archivistClient) GetBySubjectDigest(ctx context.Context, in *GetBySubjectDigestRequest, opts ...grpc.CallOption) (*GetBySubjectDigestResponse, error) {
+	out := new(GetBySubjectDigestResponse)
+	err := c.cc.Invoke(ctx, "/archivist.Archivist/GetBySubjectDigest", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (c *archivistClient) GetBySubject(ctx context.Context, in *GetBySubjectRequ
 // All implementations must embed UnimplementedArchivistServer
 // for forward compatibility
 type ArchivistServer interface {
-	GetBySubject(context.Context, *GetBySubjectRequest) (*GetBySubjectResponse, error)
+	GetBySubjectDigest(context.Context, *GetBySubjectDigestRequest) (*GetBySubjectDigestResponse, error)
 	mustEmbedUnimplementedArchivistServer()
 }
 
@@ -51,8 +51,8 @@ type ArchivistServer interface {
 type UnimplementedArchivistServer struct {
 }
 
-func (UnimplementedArchivistServer) GetBySubject(context.Context, *GetBySubjectRequest) (*GetBySubjectResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBySubject not implemented")
+func (UnimplementedArchivistServer) GetBySubjectDigest(context.Context, *GetBySubjectDigestRequest) (*GetBySubjectDigestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBySubjectDigest not implemented")
 }
 func (UnimplementedArchivistServer) mustEmbedUnimplementedArchivistServer() {}
 
@@ -67,20 +67,20 @@ func RegisterArchivistServer(s grpc.ServiceRegistrar, srv ArchivistServer) {
 	s.RegisterService(&Archivist_ServiceDesc, srv)
 }
 
-func _Archivist_GetBySubject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBySubjectRequest)
+func _Archivist_GetBySubjectDigest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBySubjectDigestRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ArchivistServer).GetBySubject(ctx, in)
+		return srv.(ArchivistServer).GetBySubjectDigest(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/archivist.Archivist/GetBySubject",
+		FullMethod: "/archivist.Archivist/GetBySubjectDigest",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ArchivistServer).GetBySubject(ctx, req.(*GetBySubjectRequest))
+		return srv.(ArchivistServer).GetBySubjectDigest(ctx, req.(*GetBySubjectDigestRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -93,8 +93,8 @@ var Archivist_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ArchivistServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetBySubject",
-			Handler:    _Archivist_GetBySubject_Handler,
+			MethodName: "GetBySubjectDigest",
+			Handler:    _Archivist_GetBySubjectDigest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

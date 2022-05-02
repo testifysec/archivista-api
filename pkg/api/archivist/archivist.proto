@@ -20,10 +20,11 @@ option go_package = "github.com/testifysec/archivist-api/pkg/api/archivist";
 
 import "google/protobuf/empty.proto";
 
-message GetBySubjectRequest {
-  string subject = 1;
+message GetBySubjectDigestRequest {
+  string algorithm = 1;
+  string value = 2;
 }
-message GetBySubjectResponse {
+message GetBySubjectDigestResponse {
   repeated string object = 1;
 }
 message StoreRequest {
@@ -31,7 +32,7 @@ message StoreRequest {
 }
 
 service Archivist {
-  rpc GetBySubject(GetBySubjectRequest) returns (GetBySubjectResponse);
+  rpc GetBySubjectDigest(GetBySubjectDigestRequest) returns (GetBySubjectDigestResponse);
 }
 
 service Collector {
