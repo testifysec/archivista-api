@@ -38,3 +38,16 @@ service Archivist {
 service Collector {
   rpc Store(StoreRequest) returns (google.protobuf.Empty);
 }
+
+message GetRequest {
+  string gitoid = 1;
+}
+
+message GetResponse {
+  string gitoid = 1;
+  string object = 2;
+}
+
+service Storage {
+  rpc Get(GetRequest) returns (GetResponse);
+}
