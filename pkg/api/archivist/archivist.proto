@@ -23,20 +23,21 @@ import "google/protobuf/empty.proto";
 message GetBySubjectDigestRequest {
   string algorithm = 1;
   string value = 2;
+  optional string collectionName = 3;
 }
+
 message GetBySubjectDigestResponse {
-  repeated string object = 1;
-}
-message StoreRequest {
-  string object = 1;
+  string gitoid = 1;
+  string collectionName = 2;
+  repeated string attestations = 3;
 }
 
 service Archivist {
-  rpc GetBySubjectDigest(GetBySubjectDigestRequest) returns (GetBySubjectDigestResponse);
+  rpc GetBySubjectDigest(GetBySubjectDigestRequest) returns (stream GetBySubjectDigestResponse);
 }
 
-service Collector {
-  rpc Store(StoreRequest) returns (google.protobuf.Empty);
+message StoreRequest {
+  string object = 1;
 }
 
 message GetRequest {
@@ -48,6 +49,7 @@ message GetResponse {
   string object = 2;
 }
 
-service Storage {
+service Collector {
+  rpc Store(StoreRequest) returns (google.protobuf.Empty);
   rpc Get(GetRequest) returns (GetResponse);
 }
