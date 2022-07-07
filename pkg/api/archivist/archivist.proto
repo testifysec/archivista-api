@@ -23,7 +23,7 @@ import "google/protobuf/empty.proto";
 message GetBySubjectDigestRequest {
   string algorithm = 1;
   string value = 2;
-  optional string collectionName = 3;
+  string collectionName = 3;
 }
 
 message GetBySubjectDigestResponse {
