@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -136,8 +135,8 @@ var Archivist_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectorClient interface {
-	Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	Store(ctx context.Context, opts ...grpc.CallOption) (Collector_StoreClient, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (Collector_GetClient, error)
 }
 
 type collectorClient struct {
@@ -148,30 +147,78 @@ func NewCollectorClient(cc grpc.ClientConnInterface) CollectorClient {
 	return &collectorClient{cc}
 }
 
-func (c *collectorClient) Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/archivist.Collector/Store", in, out, opts...)
+func (c *collectorClient) Store(ctx context.Context, opts ...grpc.CallOption) (Collector_StoreClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Collector_ServiceDesc.Streams[0], "/archivist.Collector/Store", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &collectorStoreClient{stream}
+	return x, nil
 }
 
-func (c *collectorClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, "/archivist.Collector/Get", in, out, opts...)
+type Collector_StoreClient interface {
+	Send(*Chunk) error
+	CloseAndRecv() (*StoreResponse, error)
+	grpc.ClientStream
+}
+
+type collectorStoreClient struct {
+	grpc.ClientStream
+}
+
+func (x *collectorStoreClient) Send(m *Chunk) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *collectorStoreClient) CloseAndRecv() (*StoreResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(StoreResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *collectorClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (Collector_GetClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Collector_ServiceDesc.Streams[1], "/archivist.Collector/Get", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &collectorGetClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Collector_GetClient interface {
+	Recv() (*Chunk, error)
+	grpc.ClientStream
+}
+
+type collectorGetClient struct {
+	grpc.ClientStream
+}
+
+func (x *collectorGetClient) Recv() (*Chunk, error) {
+	m := new(Chunk)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // CollectorServer is the server API for Collector service.
 // All implementations must embed UnimplementedCollectorServer
 // for forward compatibility
 type CollectorServer interface {
-	Store(context.Context, *StoreRequest) (*emptypb.Empty, error)
-	Get(context.Context, *GetRequest) (*GetResponse, error)
+	Store(Collector_StoreServer) error
+	Get(*GetRequest, Collector_GetServer) error
 	mustEmbedUnimplementedCollectorServer()
 }
 
@@ -179,11 +226,11 @@ type CollectorServer interface {
 type UnimplementedCollectorServer struct {
 }
 
-func (UnimplementedCollectorServer) Store(context.Context, *StoreRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Store not implemented")
+func (UnimplementedCollectorServer) Store(Collector_StoreServer) error {
+	return status.Errorf(codes.Unimplemented, "method Store not implemented")
 }
-func (UnimplementedCollectorServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+func (UnimplementedCollectorServer) Get(*GetRequest, Collector_GetServer) error {
+	return status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
 func (UnimplementedCollectorServer) mustEmbedUnimplementedCollectorServer() {}
 
@@ -198,40 +245,51 @@ func RegisterCollectorServer(s grpc.ServiceRegistrar, srv CollectorServer) {
 	s.RegisterService(&Collector_ServiceDesc, srv)
 }
 
-func _Collector_Store_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StoreRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CollectorServer).Store(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/archivist.Collector/Store",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorServer).Store(ctx, req.(*StoreRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+func _Collector_Store_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CollectorServer).Store(&collectorStoreServer{stream})
 }
 
-func _Collector_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRequest)
-	if err := dec(in); err != nil {
+type Collector_StoreServer interface {
+	SendAndClose(*StoreResponse) error
+	Recv() (*Chunk, error)
+	grpc.ServerStream
+}
+
+type collectorStoreServer struct {
+	grpc.ServerStream
+}
+
+func (x *collectorStoreServer) SendAndClose(m *StoreResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *collectorStoreServer) Recv() (*Chunk, error) {
+	m := new(Chunk)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(CollectorServer).Get(ctx, in)
+	return m, nil
+}
+
+func _Collector_Get_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/archivist.Collector/Get",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorServer).Get(ctx, req.(*GetRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(CollectorServer).Get(m, &collectorGetServer{stream})
+}
+
+type Collector_GetServer interface {
+	Send(*Chunk) error
+	grpc.ServerStream
+}
+
+type collectorGetServer struct {
+	grpc.ServerStream
+}
+
+func (x *collectorGetServer) Send(m *Chunk) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 // Collector_ServiceDesc is the grpc.ServiceDesc for Collector service.
@@ -240,16 +298,18 @@ func _Collector_Get_Handler(srv interface{}, ctx context.Context, dec func(inter
 var Collector_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "archivist.Collector",
 	HandlerType: (*CollectorServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Store",
-			Handler:    _Collector_Store_Handler,
+			StreamName:    "Store",
+			Handler:       _Collector_Store_Handler,
+			ClientStreams: true,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _Collector_Get_Handler,
+			StreamName:    "Get",
+			Handler:       _Collector_Get_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "archivist.proto",
 }

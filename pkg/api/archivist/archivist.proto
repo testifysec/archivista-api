@@ -18,8 +18,6 @@ package archivist;
 
 option go_package = "github.com/testifysec/archivist-api/pkg/api/archivist";
 
-import "google/protobuf/empty.proto";
-
 message GetBySubjectDigestRequest {
   string algorithm = 1;
   string value = 2;
@@ -36,8 +34,12 @@ service Archivist {
   rpc GetBySubjectDigest(GetBySubjectDigestRequest) returns (stream GetBySubjectDigestResponse);
 }
 
-message StoreRequest {
-  string object = 1;
+message Chunk {
+  bytes chunk = 1;
+}
+
+message StoreResponse {
+  string gitoid = 1;
 }
 
 message GetRequest {
@@ -50,6 +52,6 @@ message GetResponse {
 }
 
 service Collector {
-  rpc Store(StoreRequest) returns (google.protobuf.Empty);
-  rpc Get(GetRequest) returns (GetResponse);
+  rpc Store(stream Chunk) returns (StoreResponse);
+  rpc Get(GetRequest) returns (stream Chunk);
 }
