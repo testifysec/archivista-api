@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ArchivistClient interface {
 	GetBySubjectDigest(ctx context.Context, in *GetBySubjectDigestRequest, opts ...grpc.CallOption) (Archivist_GetBySubjectDigestClient, error)
+	GetSubjects(ctx context.Context, in *GetSubjectsRequest, opts ...grpc.CallOption) (Archivist_GetSubjectsClient, error)
 }
 
 type archivistClient struct {
@@ -65,11 +66,44 @@ func (x *archivistGetBySubjectDigestClient) Recv() (*GetBySubjectDigestResponse,
 	return m, nil
 }
 
+func (c *archivistClient) GetSubjects(ctx context.Context, in *GetSubjectsRequest, opts ...grpc.CallOption) (Archivist_GetSubjectsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Archivist_ServiceDesc.Streams[1], "/archivist.Archivist/GetSubjects", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &archivistGetSubjectsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Archivist_GetSubjectsClient interface {
+	Recv() (*GetSubjectsResponse, error)
+	grpc.ClientStream
+}
+
+type archivistGetSubjectsClient struct {
+	grpc.ClientStream
+}
+
+func (x *archivistGetSubjectsClient) Recv() (*GetSubjectsResponse, error) {
+	m := new(GetSubjectsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ArchivistServer is the server API for Archivist service.
 // All implementations must embed UnimplementedArchivistServer
 // for forward compatibility
 type ArchivistServer interface {
 	GetBySubjectDigest(*GetBySubjectDigestRequest, Archivist_GetBySubjectDigestServer) error
+	GetSubjects(*GetSubjectsRequest, Archivist_GetSubjectsServer) error
 	mustEmbedUnimplementedArchivistServer()
 }
 
@@ -79,6 +113,9 @@ type UnimplementedArchivistServer struct {
 
 func (UnimplementedArchivistServer) GetBySubjectDigest(*GetBySubjectDigestRequest, Archivist_GetBySubjectDigestServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetBySubjectDigest not implemented")
+}
+func (UnimplementedArchivistServer) GetSubjects(*GetSubjectsRequest, Archivist_GetSubjectsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetSubjects not implemented")
 }
 func (UnimplementedArchivistServer) mustEmbedUnimplementedArchivistServer() {}
 
@@ -114,6 +151,27 @@ func (x *archivistGetBySubjectDigestServer) Send(m *GetBySubjectDigestResponse) 
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Archivist_GetSubjects_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetSubjectsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ArchivistServer).GetSubjects(m, &archivistGetSubjectsServer{stream})
+}
+
+type Archivist_GetSubjectsServer interface {
+	Send(*GetSubjectsResponse) error
+	grpc.ServerStream
+}
+
+type archivistGetSubjectsServer struct {
+	grpc.ServerStream
+}
+
+func (x *archivistGetSubjectsServer) Send(m *GetSubjectsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Archivist_ServiceDesc is the grpc.ServiceDesc for Archivist service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -125,6 +183,11 @@ var Archivist_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetBySubjectDigest",
 			Handler:       _Archivist_GetBySubjectDigest_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetSubjects",
+			Handler:       _Archivist_GetSubjects_Handler,
 			ServerStreams: true,
 		},
 	},

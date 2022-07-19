@@ -30,8 +30,18 @@ message GetBySubjectDigestResponse {
   repeated string attestations = 3;
 }
 
+message GetSubjectsResponse {
+  string name = 1;
+  map<string, string> digest = 2;
+}
+
+message GetSubjectsRequest {
+  string envelopeGitoid = 1;
+}
+
 service Archivist {
   rpc GetBySubjectDigest(GetBySubjectDigestRequest) returns (stream GetBySubjectDigestResponse);
+  rpc GetSubjects(GetSubjectsRequest) returns (stream GetSubjectsResponse);
 }
 
 message Chunk {
