@@ -18,32 +18,6 @@ package archivist;
 
 option go_package = "github.com/testifysec/archivist-api/pkg/api/archivist";
 
-message GetBySubjectDigestRequest {
-  string algorithm = 1;
-  string value = 2;
-  string collectionName = 3;
-}
-
-message GetBySubjectDigestResponse {
-  string gitoid = 1;
-  string collectionName = 2;
-  repeated string attestations = 3;
-}
-
-message GetSubjectsResponse {
-  string name = 1;
-  map<string, string> digest = 2;
-}
-
-message GetSubjectsRequest {
-  string envelopeGitoid = 1;
-}
-
-service Archivist {
-  rpc GetBySubjectDigest(GetBySubjectDigestRequest) returns (stream GetBySubjectDigestResponse);
-  rpc GetSubjects(GetSubjectsRequest) returns (stream GetSubjectsResponse);
-}
-
 message Chunk {
   bytes chunk = 1;
 }
