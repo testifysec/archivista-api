@@ -31,18 +31,22 @@ type StoreResponse struct {
 }
 
 func Store(ctx context.Context, baseUrl string, envelope dsse.Envelope) (StoreResponse, error) {
-	uploadPath, err := url.JoinPath(baseUrl, "upload")
-	if err != nil {
-		return StoreResponse{}, err
-	}
-
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	if err := enc.Encode(envelope); err != nil {
 		return StoreResponse{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", uploadPath, buf)
+	return StoreWithReader(ctx, baseUrl, buf)
+}
+
+func StoreWithReader(ctx context.Context, baseUrl string, r io.Reader) (StoreResponse, error) {
+	uploadPath, err := url.JoinPath(baseUrl, "upload")
+	if err != nil {
+		return StoreResponse{}, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", uploadPath, r)
 	if err != nil {
 		return StoreResponse{}, err
 	}

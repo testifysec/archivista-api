@@ -15,6 +15,7 @@
 package archivistapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -26,38 +27,48 @@ import (
 )
 
 func Download(ctx context.Context, baseUrl string, gitoid string) (dsse.Envelope, error) {
+	buf := &bytes.Buffer{}
+	if err := DownloadWithWriter(ctx, baseUrl, gitoid, buf); err != nil {
+		return dsse.Envelope{}, err
+	}
+
+	env := dsse.Envelope{}
+	dec := json.NewDecoder(buf)
+	if err := dec.Decode(&env); err != nil {
+		return env, err
+	}
+
+	return env, nil
+}
+
+func DownloadWithWriter(ctx context.Context, baseUrl, gitoid string, dst io.Writer) error {
 	downloadUrl, err := url.JoinPath(baseUrl, "download", gitoid)
 	if err != nil {
-		return dsse.Envelope{}, err
+		return err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadUrl, nil)
 	if err != nil {
-		return dsse.Envelope{}, err
+		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	hc := &http.Client{}
 	resp, err := hc.Do(req)
 	if err != nil {
-		return dsse.Envelope{}, nil
+		return nil
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		errMsg, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return dsse.Envelope{}, err
+			return err
 		}
 
-		return dsse.Envelope{}, errors.New(string(errMsg))
+		return errors.New(string(errMsg))
 	}
 
-	env := dsse.Envelope{}
-	dec := json.NewDecoder(resp.Body)
-	if err := dec.Decode(&env); err != nil {
-		return env, err
-	}
-
-	return env, nil
+	_, err = io.Copy(dst, resp.Body)
+	return err
 }
