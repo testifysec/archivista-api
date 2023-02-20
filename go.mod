@@ -1,4 +1,4 @@
-module github.com/testifysec/archivist-api
+module github.com/testifysec/archivista-api
 
 go 1.18
 

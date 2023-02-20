@@ -1,1 +1,1 @@
-# archivist-api
+# archivista-api
